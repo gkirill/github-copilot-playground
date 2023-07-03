@@ -1,4 +1,30 @@
 ---
+/**
+ * Chart.jsを使ってバーンアップチャートを作成する
+ * - 元になるデータ
+ *   - 以下のようなJSON形式
+ *     ```
+ *     [
+ *       {
+ *         "id": 1,
+ *         "title": "Issue 1",
+ *         "description": "Issue 1 description",
+ *         "status": "todo",
+ *         "assignee": "John Doe",
+ *         "created": "2023-06-01",
+ *         "closed": null
+ *       }
+ *     ]
+ *     ```
+ *   - 以下からダウンロードする
+ *     - https://raw.githubusercontent.com/dzeyelid/github-copilot-playground/main/sample/chart/issues.json
+ * - チャートの期間は、2023/6/16から2023/6/30までとする
+ * - y軸
+ *   - 最大値はアイテムの個数とする
+ *   - 日付におけるclosedの累計の個数を示す
+ * - x軸
+ *   - 日付を示す  
+*/
 ---
 
 <html lang="en">
@@ -11,5 +37,56 @@
   </head>
   <body>
     <h1>Astro</h1>
+    <!-- チャートを描画する -->
+    <canvas id="chart"></canvas>
+    <script>
+      // Import necessary libs
+      import Chart from 'https://cdn.skypack.dev/chart.js';
+      import issues from 'https://raw.githubusercontent.com/dzeyelid/github-copilot-playground/main/sample/chart/issues.json';
+
+      // Configure dates
+      const startDate = new Date('2023-06-16');
+      const endDate = new Date('2023-06-30');
+
+      // 期間中、日毎に、開始時点からその日までのclosedの累計を算出する
+      // {
+      //    date: string,
+      //    count: number
+      // }
+      const data = [];
+          
+      for (let date = startDate; date <= endDate; date.setDate(date.getDate() + 1)) {
+        const dateString = date.toISOString().split('T')[0];
+        const count = issues.filter(issue => issue.closed && issue.closed <= dateString).length;
+        data.push({ date: dateString, count });
+      }
+
+      // チャートを描画する
+      const ctx = document.getElementById('chart').getContext('2d');
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.map(d => d.date),
+          datasets: [
+            {
+              label: 'Closed',
+              data: data.map(d => d.count),
+              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+              borderColor: 'rgba(255, 99, 132, 1)',
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: issues.length,
+            },
+          },
+        },
+      });
+
+    </script>
   </body>
 </html>
